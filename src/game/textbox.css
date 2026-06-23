@@ -1,0 +1,71 @@
+@font-face {
+  font-family: VT323;
+  src: url(VT323-Regular.ttf);
+}
+
+.text-box-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  bottom: 20px;
+  width: fit-content;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1000;
+  transform: scale(calc(1 / var(--scale, 1)));
+  transform-origin: bottom center;
+}
+
+@keyframes playPortrait {
+  0% {
+    background-position: 0px 0px;
+  }
+  33% {
+    background-position: -32px 0px;
+  }
+  66% {
+    background-position: -64px 0px;
+  }
+  100% {
+    background-position: -96px 0px;
+  }
+}
+
+.textbox-image {
+  width: 1200px;
+  height: auto;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.title-text {
+  position: absolute;
+  top: calc(28% - 10px);
+  left: 12%;
+  right: 17%;
+  font-family: VT323, monospace;
+  font-size: 3rem;
+  color: #6b5052;
+  user-select: none;
+  pointer-events: none;
+  margin: 0;
+}
+
+.displayed-text {
+  position: absolute;
+  top: 39%;
+  left: calc(12% + 132px);
+  right: 17%;
+
+  font-family: VT323, monospace;
+  font-size: 2.5rem;
+  color: #71728b;
+  user-select: none;
+  pointer-events: none;
+  margin: 0; /* Keep this at 0 */
+}
