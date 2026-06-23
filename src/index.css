@@ -1,0 +1,73 @@
+:root {
+  --width: 1920;
+  --height: 1080;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #9ba99e;
+  touch-action: none;
+  overscroll-behavior: none;
+  position: relative;
+}
+
+canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  object-fit: fill !important;
+  z-index: 1;
+}
+#ui {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  width: 1920px;
+  height: 1080px;
+
+  transform: translate(-50%, -50%) scale(var(--scale, 1));
+  transform-origin: center;
+
+  overflow: visible;
+  pointer-events: none;
+  z-index: 20;
+}
+#ui > * {
+  pointer-events: auto;
+}
+
+#textbox-container {
+  display: none;
+  position: absolute;
+  bottom: 20px;
+  width: 80%;
+  left: 10%;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  border: 2px solid white;
+}
+
+#game-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+#game-wrapper > .text-box-wrapper {
+  pointer-events: auto;
+}
