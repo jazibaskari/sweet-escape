@@ -2,6 +2,8 @@ import { atom, createStore } from "jotai";
 
 export const isTextBoxVisibleAtom = atom(false);
 
+export const isBossTextBoxVisibleAtom = atom(false);
+
 export const isChildPortraitVisibleAtom = atom<boolean>(false);
 
 export const textBoxContentAtom = atom("");

@@ -5,6 +5,7 @@ import { spawnWaypointNPC } from "../entities/npc";
 import {
   store,
   isTextBoxVisibleAtom,
+  isBossTextBoxVisibleAtom,
   textBoxContentAtom,
   isParentTextBoxVisibleAtom,
   isChildPortraitVisibleAtom,
@@ -15,8 +16,15 @@ export default function setupFallingGame(k) {
     const clearDialogues = () => {
       store.set(isTextBoxVisibleAtom, false);
       store.set(isParentTextBoxVisibleAtom, false);
+      store.set(isBossTextBoxVisibleAtom, false);
       store.set(isChildPortraitVisibleAtom, false);
     };
+
+    let isBossAlertActive = false;
+    let bossAlert = null;
+    let bossTimer = null;
+    let dialogueTimer = null;
+    let childAutoExitTimer = null;
 
     k.add([k.sprite("map-base"), k.pos(0), k.scale(scaleFactor), k.z(0)]);
     const CHILD_SPEED = 40;
@@ -26,7 +34,6 @@ export default function setupFallingGame(k) {
     let score = 0;
     let musicStarted = false;
     let isAttemptingMusic = false;
-    let dialogueTimer = null;
 
     const triggerMusic = async () => {
       if (musicStarted || isAttemptingMusic) return;
@@ -100,6 +107,19 @@ export default function setupFallingGame(k) {
                 isOpen: false,
               },
             ]);
+          } else if (boundary.name === "cashier_3") {
+            k.add([
+              k.pos(boundary.x * scaleFactor, boundary.y * scaleFactor),
+              k.rect(
+                boundary.width * scaleFactor,
+                boundary.height * scaleFactor
+              ),
+              k.area(),
+              k.body({ isStatic: true }),
+              "obstacle",
+              "cashier-boundary",
+              k.opacity(0),
+            ]);
           } else {
             k.add([
               k.pos(boundary.x * scaleFactor, boundary.y * scaleFactor),
@@ -139,6 +159,16 @@ export default function setupFallingGame(k) {
             : null;
         })
         .filter((p) => p !== null);
+    };
+
+    const getLayerObjects = (layerName: string) => {
+      const layer = mapData.layers.find((l) => l.name === layerName);
+      if (!layer) return null;
+      return layer.objects.map((obj) => ({
+        x: obj.x * scaleFactor,
+        y: obj.y * scaleFactor,
+        name: obj.name,
+      }));
     };
 
     const playerControl = createPlayer(k, {
@@ -193,18 +223,120 @@ export default function setupFallingGame(k) {
       clearDialogues,
       (childNpc) => {
         k.wait(2, () => {
-          const alert = k.add([
-            k.sprite("alert"),
-            k.pos(childNpc.pos.x, childNpc.pos.y - 30),
-            k.anchor("center"),
-            k.z(100),
-          ]);
-          childNpc.alertSprite = alert;
-          childNpc.alertActive = true;
+          if (!childNpc.hasTriggeredText) {
+            const alert = k.add([
+              k.sprite("alert"),
+              k.pos(childNpc.pos.x, childNpc.pos.y - 30),
+              k.anchor("center"),
+              k.z(100),
+            ]);
+            childNpc.alertSprite = alert;
+            childNpc.alertActive = true;
+          }
+        });
+
+        childAutoExitTimer = k.wait(20, () => {
+          if (!childNpc.hasTriggeredText && !childNpc.hasCompletedInteraction) {
+            childNpc.hasCompletedInteraction = true;
+            if (childNpc.alertSprite) {
+              childNpc.alertSprite.destroy();
+              childNpc.alertSprite = null;
+            }
+            childNpc.alertActive = false;
+
+            const parentExit = getWaypoints("parent_exit_points", [
+              "turn_down_point",
+              "turn_right_point",
+              "turn_up_point",
+              "turn_left_point",
+              "end_point",
+            ]);
+
+            if (boy1 && parentExit) {
+              boy1.waypoints = parentExit;
+              boy1.curIndex = 0;
+              boy1.moving = true;
+              boy1.isExiting = true;
+              boy1.startNextLeg();
+            }
+          }
         });
       },
       getWaypoints
     );
+
+    let npcsDestroyed = 0;
+    const handleNpcDestroyed = () => {
+      npcsDestroyed++;
+      if (npcsDestroyed === 2) {
+        if (bossSpawnPoint) {
+          bossAlert = k.add([
+            k.sprite("alert"),
+            k.pos(bossSpawnPoint.x, bossSpawnPoint.y - 60),
+            k.anchor("center"),
+            k.z(100),
+          ]);
+          isBossAlertActive = true;
+
+          bossTimer = k.wait(20, () => {
+            if (isBossAlertActive) {
+              if (bossAlert) bossAlert.destroy();
+              isBossAlertActive = false;
+            }
+          });
+        }
+
+        k.wait(5, () => {
+          const trolleyPoints = getLayerObjects("trolley_spawn_point");
+          if (trolleyPoints && trolleyPoints.length > 0) {
+            spawnWaypointNPC(
+              k,
+              "trolley-guy-sprite",
+              trolleyPoints,
+              0,
+              100,
+              "trolley-right",
+              32,
+              48,
+              0,
+              10,
+              false,
+              animateDoor,
+              player,
+              clearDialogues
+            );
+          }
+        });
+      }
+    };
+
+    if (boy1) boy1.on("destroy", handleNpcDestroyed);
+    if (child) child.on("destroy", handleNpcDestroyed);
+
+    player.onCollide("cashier-boundary", () => {
+      if (isBossAlertActive) {
+        isBossAlertActive = false;
+        if (bossAlert) bossAlert.destroy();
+        if (bossTimer) bossTimer.cancel();
+
+        store.set(
+          textBoxContentAtom,
+          "Stay out of the way of any customers with trolleys. They're in a rush!"
+        );
+        store.set(isBossTextBoxVisibleAtom, true);
+        k.wait(DIALOGUE_DURATION, () =>
+          store.set(isBossTextBoxVisibleAtom, false)
+        );
+      }
+    });
+
+    player.onCollide("trolley-guy-sprite", () => {
+      playerControl.playEffectAnimation("damage");
+      score -= 5;
+      scoreText.text = `Score: ${score}/100`;
+      checkGameStatus();
+    });
+
     player.onCollide("child", (childNpc) => {
       if (
         childNpc.alertActive &&
@@ -212,6 +344,11 @@ export default function setupFallingGame(k) {
         !childNpc.hasCompletedInteraction
       ) {
         childNpc.hasTriggeredText = true;
+
+        if (childAutoExitTimer) {
+          childAutoExitTimer.cancel();
+          childAutoExitTimer = null;
+        }
 
         if (childNpc.alertSprite) {
           childNpc.alertSprite.destroy();
@@ -457,6 +594,7 @@ export default function setupFallingGame(k) {
       player.timers.forEach((timer: number) => clearTimeout(timer));
       player.timers = [];
       if (dialogueTimer) dialogueTimer.cancel();
+      if (childAutoExitTimer) childAutoExitTimer.cancel();
       clearDialogues();
     });
   });

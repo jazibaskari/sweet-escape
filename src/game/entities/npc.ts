@@ -30,7 +30,7 @@ export function spawnWaypointNPC(
   if (!waypoints || waypoints.length === 0) return null;
 
   const npc = k.add([
-    k.sprite(spriteName, { anim: "breathe-down" }),
+    k.sprite(spriteName, { anim: finalAnim || "breathe-down" }),
     k.pos(waypoints[0].x, waypoints[0].y),
     k.anchor("center"),
     k.scale(playerScaleFactor),
@@ -55,21 +55,37 @@ export function spawnWaypointNPC(
   const startNextLeg = () => {
     if (npc.curIndex >= npc.waypoints.length) {
       npc.moving = false;
+      if (spriteName === "trolley-guy-sprite" || npc.isExiting) {
+        if (onReachEnd) onReachEnd(npc);
+        npc.destroy();
+        return;
+      }
       npc.play(finalAnim);
       npc.flipX = defaultFlipX;
       if (onReachEnd) onReachEnd(npc);
-      if (npc.isExiting) npc.destroy();
       return;
     }
+
     const target = npc.waypoints[npc.curIndex];
     const dx = target.x - npc.pos.x;
     const dy = target.y - npc.pos.y;
-    if (Math.abs(dy) > Math.abs(dx)) {
-      npc.play(dy > 0 ? "walk-down" : "walk-up");
-      npc.flipX = false;
+
+    if (spriteName === "trolley-guy-sprite") {
+      if (Math.abs(dy) > Math.abs(dx)) {
+        npc.play(dy > 0 ? "trolley-down" : "trolley-up");
+        npc.flipX = false;
+      } else {
+        npc.play(dx > 0 ? "trolley-right" : "trolley-left");
+        npc.flipX = false;
+      }
     } else {
-      npc.play("walk-side");
-      npc.flipX = dx < 0;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        npc.play(dy > 0 ? "walk-down" : "walk-up");
+        npc.flipX = false;
+      } else {
+        npc.play("walk-side");
+        npc.flipX = dx < 0;
+      }
     }
   };
 
@@ -81,7 +97,7 @@ export function spawnWaypointNPC(
   });
 
   npc.onUpdate(() => {
-    if (spriteName === "boy-1") {
+    if (spriteName === "boy-1" || spriteName === "trolley-guy-sprite") {
       const doors = k.get("door");
       for (const door of doors) {
         if (npc.pos.dist(door.pos) <= 70) {
@@ -96,6 +112,7 @@ export function spawnWaypointNPC(
 
     if (!npc.moving) {
       if (npc.isExiting && spriteName === "child") return;
+      if (spriteName === "trolley-guy-sprite") return;
 
       const anim = npc.curAnim();
       if (anim && anim.includes("walk")) {
