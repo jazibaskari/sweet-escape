@@ -1,3 +1,13 @@
+export const trolleyAnimConfig = {
+  sliceX: 6,
+  sliceY: 4,
+  anims: {
+    "trolley-right": { from: 0, to: 5, loop: true },
+    "trolley-left": { from: 6, to: 11, loop: true },
+    "trolley-up": { from: 12, to: 17, loop: true },
+    "trolley-down": { from: 18, to: 23, loop: true },
+  },
+};
 export const doorAnimConfig = {
   sliceX: 5,
   sliceY: 2,
@@ -47,6 +57,7 @@ export function loadAssets(k) {
 
   k.loadSprite("player-sprite", "./player.png", spriteAnimConfig);
   k.loadSprite("boss-sprite", "./boss.png", spriteAnimConfig);
+  k.loadSprite("trolley-guy-sprite", "./trolley.png", trolleyAnimConfig);
   k.loadSprite("child", "./child.png", spriteAnimConfig);
   k.loadSprite("door", "./doors.png", doorAnimConfig);
   k.loadSprite("boy-1", "./parent.png", spriteAnimConfig);

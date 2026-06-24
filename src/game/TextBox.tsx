@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { motion } from "framer-motion";
 import {
+  store,
   isTextBoxVisibleAtom,
   isParentTextBoxVisibleAtom,
+  isBossTextBoxVisibleAtom,
   textBoxContentAtom,
 } from "./store";
-import defaultTextboxBg from "/textbox.png";
+import defaultTextboxBg from "/boss_textbox.png";
 import childTextboxBg from "/child_textbox.png";
 import parentTextboxBg from "/parent_textbox.png";
 import "./textbox.css";
@@ -36,19 +38,25 @@ function TypewriterText({ text }: { text: string }) {
 }
 
 export default function TextBox() {
-  const [isVisible, setIsVisible] = useAtom(isTextBoxVisibleAtom);
+  const [isVisible, setIsVisible] = useAtom(isTextBoxVisibleAtom, { store });
   const [isParentVisible, setIsParentVisible] = useAtom(
-    isParentTextBoxVisibleAtom
+    isParentTextBoxVisibleAtom,
+    { store }
   );
+  const [isBossVisible, setIsBossVisible] = useAtom(isBossTextBoxVisibleAtom, {
+    store,
+  });
 
-  const [defaultContent] = useAtom(textBoxContentAtom);
+  const [defaultContent] = useAtom(textBoxContentAtom, { store });
 
   const [isCloseRequest, setIsCloseRequest] = useState(false);
 
-  const isAnyVisible = isVisible || isParentVisible;
+  const isAnyVisible = isVisible || isParentVisible || isBossVisible;
 
   const activeTextbox = isParentVisible
     ? { content: defaultContent, bg: parentTextboxBg }
+    : isBossVisible
+    ? { content: defaultContent, bg: defaultTextboxBg }
     : isVisible
     ? { content: defaultContent, bg: childTextboxBg }
     : { content: defaultContent, bg: defaultTextboxBg };
@@ -67,6 +75,7 @@ export default function TextBox() {
     if (isCloseRequest) {
       setIsVisible(false);
       setIsParentVisible(false);
+      setIsBossVisible(false);
       setIsCloseRequest(false);
     }
   };
