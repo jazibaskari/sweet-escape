@@ -82,6 +82,8 @@ export default function setupFallingGame(k) {
     let guardSpawnPoint = null;
     let bossSpawnPoint = null;
 
+    // k.debug.inspect = true;
+
     for (const layer of mapData.layers) {
       if (layer.name === "boundaries") {
         for (const boundary of layer.objects) {
@@ -472,19 +474,21 @@ export default function setupFallingGame(k) {
     k.add([k.sprite("map-top"), k.pos(0), k.scale(scaleFactor), k.z(100)]);
 
     const spawnItem = () => {
+      const minX = 750;
+      const maxX = 1400;
+      const startX = k.rand(minX, maxX);
       const isGood = Math.random() > 0.3;
       const goodSprites = ["good-item-1", "good-item-2", "good-item-3"];
       const badSprites = ["bad-item-1"];
       const spriteName = isGood
         ? goodSprites[Math.floor(Math.random() * goodSprites.length)]
         : badSprites[Math.floor(Math.random() * badSprites.length)];
-
       const cam = k.camPos();
       const screenLeft = cam.x - k.width() / 2;
       const screenRight = cam.x + k.width() / 2;
       const screenTop = cam.y - k.height() / 2;
 
-      const startX = k.rand(screenLeft + 20, screenRight - 20);
+      //   const startX = k.rand(screenLeft + 20, screenRight - 20);
       const startY = screenTop - 50;
       const rotationSpeed = k.rand(-90, 90);
 
