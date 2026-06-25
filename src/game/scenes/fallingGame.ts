@@ -27,8 +27,8 @@ export default function setupFallingGame(k) {
     let childAutoExitTimer = null;
 
     k.add([k.sprite("map-base"), k.pos(0), k.scale(scaleFactor), k.z(0)]);
-    const CHILD_SPEED = 40;
-    const PARENT_SPEED = 45;
+    const CHILD_SPEED = 400;
+    const PARENT_SPEED = 450;
     const DIALOGUE_DURATION = 8;
 
     let score = 0;
@@ -276,13 +276,17 @@ export default function setupFallingGame(k) {
             k.anchor("center"),
             k.z(100),
           ]);
-          isBossAlertActive = true;
+
+          k.wait(1.5, () => {
+            isBossAlertActive = true;
+          });
 
           bossTimer = k.wait(20, () => {
-            if (isBossAlertActive) {
-              if (bossAlert) bossAlert.destroy();
-              isBossAlertActive = false;
+            if (bossAlert) {
+              bossAlert.destroy();
+              bossAlert = null;
             }
+            isBossAlertActive = false;
           });
         }
 
@@ -313,22 +317,32 @@ export default function setupFallingGame(k) {
     if (boy1) boy1.on("destroy", handleNpcDestroyed);
     if (child) child.on("destroy", handleNpcDestroyed);
 
-    player.onCollide("cashier-boundary", () => {
-      if (isBossAlertActive) {
-        isBossAlertActive = false;
-        if (bossAlert) bossAlert.destroy();
-        if (bossTimer) bossTimer.cancel();
+    const triggerBossDialogue = () => {
+      if (!isBossAlertActive) return;
+      isBossAlertActive = false;
 
-        store.set(
-          textBoxContentAtom,
-          "Stay out of the way of any customers with trolleys. They're in a rush!"
-        );
-        store.set(isBossTextBoxVisibleAtom, true);
-        k.wait(DIALOGUE_DURATION, () =>
-          store.set(isBossTextBoxVisibleAtom, false)
-        );
+      if (bossAlert) {
+        bossAlert.destroy();
+        bossAlert = null;
       }
-    });
+
+      if (bossTimer) bossTimer.cancel();
+      if (dialogueTimer) dialogueTimer.cancel();
+
+      clearDialogues();
+
+      store.set(
+        textBoxContentAtom,
+        "Stay out of the way of any customers with trolleys. They're in a rush!"
+      );
+      store.set(isBossTextBoxVisibleAtom, true);
+
+      dialogueTimer = k.wait(DIALOGUE_DURATION, () =>
+        store.set(isBossTextBoxVisibleAtom, false)
+      );
+    };
+
+    player.onCollide("cashier-boundary", triggerBossDialogue);
 
     player.onCollide("trolley-guy-sprite", () => {
       playerControl.playEffectAnimation("damage");
@@ -373,6 +387,17 @@ export default function setupFallingGame(k) {
     });
 
     k.onUpdate(() => {
+      // Manual collision check ensures dialogue triggers if the player is already touching
+      // the boundary the exact moment the 1.5s delay ends.
+      if (isBossAlertActive) {
+        const cashiers = k.get("cashier-boundary");
+        for (const cashier of cashiers) {
+          if (player.isColliding(cashier)) {
+            triggerBossDialogue();
+          }
+        }
+      }
+
       if (boy1 && boy1.isExiting && !boy1.hasWaited) {
         const target = boy1.waypoints[boy1.curIndex];
         if (

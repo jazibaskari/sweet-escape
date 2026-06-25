@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   store,
   isTextBoxVisibleAtom,
@@ -38,18 +38,10 @@ function TypewriterText({ text }: { text: string }) {
 }
 
 export default function TextBox() {
-  const [isVisible, setIsVisible] = useAtom(isTextBoxVisibleAtom, { store });
-  const [isParentVisible, setIsParentVisible] = useAtom(
-    isParentTextBoxVisibleAtom,
-    { store }
-  );
-  const [isBossVisible, setIsBossVisible] = useAtom(isBossTextBoxVisibleAtom, {
-    store,
-  });
-
+  const [isVisible] = useAtom(isTextBoxVisibleAtom, { store });
+  const [isParentVisible] = useAtom(isParentTextBoxVisibleAtom, { store });
+  const [isBossVisible] = useAtom(isBossTextBoxVisibleAtom, { store });
   const [defaultContent] = useAtom(textBoxContentAtom, { store });
-
-  const [isCloseRequest, setIsCloseRequest] = useState(false);
 
   const isAnyVisible = isVisible || isParentVisible || isBossVisible;
 
@@ -61,48 +53,31 @@ export default function TextBox() {
     ? { content: defaultContent, bg: childTextboxBg }
     : { content: defaultContent, bg: defaultTextboxBg };
 
-  useEffect(() => {
-    if (!isAnyVisible) return;
-
-    const timer = setTimeout(() => {
-      setIsCloseRequest(true);
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, [isAnyVisible, activeTextbox.content]);
-
-  const handleAnimationComplete = () => {
-    if (isCloseRequest) {
-      setIsVisible(false);
-      setIsParentVisible(false);
-      setIsBossVisible(false);
-      setIsCloseRequest(false);
-    }
-  };
-
   return (
-    isAnyVisible && (
-      <motion.div
-        className="text-box-wrapper"
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={isCloseRequest ? "closed" : "open"}
-        variants={variants}
-        transition={{ duration: 0.2 }}
-        onAnimationComplete={handleAnimationComplete}
-      >
-        <div className="child-portrait" />
-        <img
-          src={activeTextbox.bg}
-          alt="Textbox UI"
-          className="textbox-image"
-        />
-        <div className="displayed-text">
-          <TypewriterText
-            key={activeTextbox.content}
-            text={activeTextbox.content}
+    <AnimatePresence>
+      {isAnyVisible && (
+        <motion.div
+          className="text-box-wrapper"
+          initial="closed"
+          animate="open"
+          exit="closed"
+          variants={variants}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="child-portrait" />
+          <img
+            src={activeTextbox.bg}
+            alt="Textbox UI"
+            className="textbox-image"
           />
-        </div>
-      </motion.div>
-    )
+          <div className="displayed-text">
+            <TypewriterText
+              key={activeTextbox.content}
+              text={activeTextbox.content}
+            />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
