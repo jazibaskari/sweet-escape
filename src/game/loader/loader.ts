@@ -2,8 +2,8 @@ export const trolleyAnimConfig = {
   sliceX: 6,
   sliceY: 4,
   anims: {
-    "trolley-right": { from: 0, to: 5, loop: true },
-    "trolley-left": { from: 6, to: 11, loop: true },
+    "trolley-left": { from: 0, to: 5, loop: true },
+    "trolley-right": { from: 6, to: 11, loop: true },
     "trolley-up": { from: 12, to: 17, loop: true },
     "trolley-down": { from: 18, to: 23, loop: true },
   },
