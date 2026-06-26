@@ -389,8 +389,6 @@ export default function setupFallingGame(k) {
     });
 
     k.onUpdate(() => {
-      // Manual collision check ensures dialogue triggers if the player is already touching
-      // the boundary the exact moment the 1.5s delay ends.
       if (isBossAlertActive) {
         const cashiers = k.get("cashier-boundary");
         for (const cashier of cashiers) {
